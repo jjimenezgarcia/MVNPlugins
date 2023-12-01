@@ -34,25 +34,26 @@ if [ -d "$directory/target" ]; then
     echo -e "${GREEN}Archivo PMD.${NC}"
     batcat "$directory/target/pmd.xml"
 
-    mvn -f "$directory/pom.xml" clean spotbugs:check > /dev/null 2>&1
-    spotbugs_exit_code=$?
+    spotbugs_output=$(mvn -f "$directory/pom.xml" clean -DskipTests package spotbugs:check 2>&1)
     
-    # Informa sobre el resultado del comando SpotBugs
-    if [ $spotbugs_exit_code -ne 0 ]; then
+    # Verifica si la salida de Spotbugs contiene la cadena [ERROR]
+    if echo "$spotbugs_output" | grep -q '\[ERROR\]'; then
         echo -e "${RED}Errores en el build de SpotBugs.${NC}"
+        echo "$spotbugs_output" | grep -E '^\[ERROR\]'
     else
         echo -e "${GREEN}Build de SpotBugs completado sin errores.${NC}"
     fi
-    
-    mvn -f "$directory/pom.xml" clean javadoc:javadoc > /dev/null 2>&1
-    javadoc_exit_code=$?
 
-    # Informa sobre el resultado del comando Javadoc
-    if [ $javadoc_exit_code -ne 0 ]; then
+    javadoc_output=$(mvn -f "$directory/pom.xml" clean javadoc:javadoc 2>&1)
+
+    # Verifica si Javadoc contiene la cadena [ERROR]
+    if echo "$javadoc_output" | grep -q '\[WARNING\]'; then
         echo -e "${RED}Errores en el build de Javadoc.${NC}"
+        echo "$javadoc_output" | grep -E '^\[WARNING\] /'
     else
-        echo -e "${GREEN}Build de Javadoc completado sin errores.${NC}"
+        echo -e "${GREEN}Build de SpotBugs completado sin errores.${NC}"
     fi
+
 
 else
     echo "No existe pom.xml en $directory."
